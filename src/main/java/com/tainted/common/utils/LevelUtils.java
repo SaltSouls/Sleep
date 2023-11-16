@@ -8,14 +8,17 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 public class LevelUtils {
 
@@ -27,40 +30,41 @@ public class LevelUtils {
         return new AABB(x - horizontal, y - vertical, z - horizontal, x + horizontal, y + vertical, z + horizontal);
     }
 
-    public static Collection<BlockPos> getBlocksForTick(Player player) {
+    public static ArrayList<BlockPos> getBlocksForTick(Player player) {
         Level level = player.getLevel();
-        AABB bounds = newAABB(player, 128, 128);
-        Iterable<BlockPos> temp = BlockPos.betweenClosed((int) bounds.minX, (int) bounds.minY, (int) bounds.minZ, (int) bounds.maxX, (int) bounds.maxY, (int) bounds.maxZ);
-        Collection<BlockPos> list = new ArrayList<>();
-        for (BlockPos listPos : temp) {
+        AABB bounds = newAABB(player, 16, 16);
+        Stream<BlockPos> temp = BlockPos.betweenClosedStream(bounds);
+        ArrayList<BlockPos> list = new ArrayList<>();
+        temp.forEach(listPos -> {
             BlockState state = level.getBlockState(listPos);
-            if (state.getBlock() instanceof CropBlock) list.add(listPos);
-        }
+            if (state.isRandomlyTicking() && state.getBlock() instanceof CropBlock) list.add(listPos);
+        });
         return list;
     }
 
-    private static void randomlyTickBlock(Level level, BlockPos pos) {
-        level.getBlockState(pos).randomTick((ServerLevel) level, pos, level.random);
+    private static void randomlyTickBlocks(ServerLevel level, BlockPos pos, int amount, int ticks, int speed) {
+        BlockState state = level.getBlockState(pos);
+        for (int i = ((ticks) * speed) / (amount * speed); i > 0; i--) {
+            state.randomTick(level, pos, level.random);
+            Sleep.LOGGER.info("Remaining ticks: " + i);
+        }
     }
 
     public static void tickBlocks(Player player, long timeAddition, int dayLength) {
         Level level = player.getLevel();
         int skippedTicks = (int) (timeAddition % dayLength);
         int speed = level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
-        Sleep.LOGGER.info(skippedTicks);
         int blocksToTick = getBlocksForTick(player).size();
-        int blocksLeft = blocksToTick;
-        Sleep.LOGGER.info("Blocks to tick = " + blocksToTick);
+        int remainingBlocks = blocksToTick;
 
         for (long i = skippedTicks; i > 0; i--) { level.tickBlockEntities(); }
+        if (!(level instanceof ServerLevel)) return;
         for (BlockPos listPos : getBlocksForTick(player)) {
-            Sleep.LOGGER.info("Block left: " + blocksLeft);
-            for (int i = ((skippedTicks) * speed) / (blocksToTick * 2); i > 0; i--) {
-                randomlyTickBlock(level, listPos);
-                Sleep.LOGGER.info("ticks left: " + i);
-            }
-            blocksLeft -= 1;
+            String blockName = level.getBlockState(listPos).getBlock().getName().toString();
+            Sleep.LOGGER.info("Remaining Blocks: " + remainingBlocks + " | Current Block: " + blockName);
+            randomlyTickBlocks((ServerLevel) level, listPos, blocksToTick, skippedTicks, speed);
+            remainingBlocks -= 1;
         }
-
     }
+
 }
