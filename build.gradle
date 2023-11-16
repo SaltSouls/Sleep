@@ -1,0 +1,105 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '5.1.+'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+}
+
+repositories {
+    maven { name = "CurseMaven"
+        url = "https://www.cursemaven.com" }
+}
+
+group = 'com.tainted'
+version = "${mc_version}-${mod_version}"
+
+java {
+    archivesBaseName = project.mod_id
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+
+
+minecraft {
+    mappings channel: "${mappings_channel}", version: "${mappings_version}"
+    accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
+
+    runs {
+        client {
+            workingDirectory project.file('run\\client\\main')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', project.properties.mod_id
+            args '--username', 'Dev1'
+            mods {
+                sleep {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run\\server')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', project.properties.mod_id
+            mods {
+                sleep {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        gameTestServer {
+            workingDirectory project.file('run\\server')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', project.properties.mod_id
+            mods {
+                sleep {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run\\data')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', project.properties.mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            mods {
+                sleep {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
+//    runtimeOnly fg.deobf("curse.maven:jei-238222:${jei_version}")
+    runtimeOnly fg.deobf("curse.maven:configured-457570:${configured_version}")
+    runtimeOnly fg.deobf("curse.maven:catalogue-459701:${catalogue_version}")
+//    runtimeOnly fg.deobf("curse.maven:hourglass-511172:${hourglass_version}")
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : project.mod_name,
+                "Specification-Vendor"    : "TwinSouls",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : archivesBaseName,
+                "Implementation-Version"  : mod_version,
+                "Implementation-Vendor"   : "TwinSouls",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
