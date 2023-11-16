@@ -38,12 +38,12 @@ public class TickEvents {
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.@NotNull PlayerTickEvent event) {
-        // only run event if not client-side
-        Level level = event.player.getLevel();
-        if (level.isClientSide() && !(event.player instanceof ServerPlayer)) return;
         // only run event during the END phase
         TickEvent.Phase phase = event.phase;
         if (!phase.equals(TickEvent.Phase.END)) return;
+        // only run event if not client-side
+        Level level = event.player.getLevel();
+        if (level.isClientSide() && !(event.player instanceof ServerPlayer)) return;
         // only run checks every 30 seconds
         long time = level.getGameTime();
         if (time % seconds(30) != 0) return;
@@ -61,7 +61,7 @@ public class TickEvents {
         Exhaustion exhaustion = getExhaustionState(level, days);
         if (exhaustion == null) return; // this should never happen
         // log info during the start of a new day
-        if (time % dayLength <= seconds(30)) {
+        if (level.getDayTime() % dayLength <= seconds(30)) {
             Sleep.LOGGER.info("Current exhaustion state is: " + exhaustion);
             Sleep.LOGGER.info(days + " day(s) have passed without sleeping.");
         }

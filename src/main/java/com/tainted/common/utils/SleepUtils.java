@@ -78,6 +78,7 @@ public class SleepUtils {
         // just for testing purposes
         return getOppositeTime(player).getStart();
     }
+
     public static Long getTimeAddition(Level level, ServerPlayer player) {
         long dayTime = level.getDayTime();
         long dayRemainder = dayTime % dayLength;

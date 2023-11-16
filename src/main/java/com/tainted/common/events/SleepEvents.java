@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 import net.minecraftforge.event.entity.player.SleepingTimeCheckEvent;
 import net.minecraftforge.event.level.SleepFinishedTimeEvent;
@@ -79,15 +80,14 @@ public class SleepEvents {
             Time playerTime = TimeUtils.getPlayerTimeSlice(player);
             if (playerTime == null) return; // another thing that should never happen
             long timeAddition = getTimeAddition(level, player);
-            int dayLength = Level.TICKS_PER_DAY;
             switch (playerTime) {
                 case MORNING_E, MORNING, MORNING_L, NOON_E, NOON, NOON_L, NIGHT_L -> {
-                    tickBlocks(player, timeAddition, dayLength);
+                    tickBlocks(player, timeAddition);
                     event.setTimeAddition(timeAddition);
                 }
                 case EVENING_E, EVENING, EVENING_L, NIGHT_E, NIGHT -> {
                     DespawnUtils.despawnEntities(level, player);
-                    tickBlocks(player, timeAddition, dayLength);
+                    tickBlocks(player, timeAddition);
                     event.setTimeAddition(timeAddition);
                 }
             }
